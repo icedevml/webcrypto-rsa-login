@@ -3,12 +3,17 @@ import os
 
 from cryptography.exceptions import InvalidSignature
 from flask import Flask
+from flask import flash
+from flask import redirect
 from flask import render_template
 from flask import request
 from uuid import uuid4
 
+from flask import url_for
+
 app = Flask(__name__)
 app.debug = True
+app.secret_key = 'foobar123'
 
 users = {}
 challenges = {}
@@ -63,37 +68,54 @@ def register():
 @app.route('/register/submit', methods=['POST'])
 def register_submit():
     public_key = load_pem_public_key(request.form.get('public_key'))
+
     try:
         challenge = pop_challenge(request.form.get('challenge_id'))
     except KeyError:
-        return 'tried to use challenge for the second time'
+        flash('tried to use inexistent challenge nonce/the same nonce for the second time', 'error')
+        return redirect(url_for('main'))
 
-    verify_signature(public_key, challenge, request.form.get('signature'))
+    try:
+        verify_signature(public_key, challenge, request.form.get('signature'))
+    except InvalidSignature:
+        flash('signature verification failed', 'error')
+        return redirect(url_for('main'))
 
     username = request.form.get('username')
+
+    if username in users:
+        flash('such user already exists', 'error')
+        return redirect(url_for('main'))
+
     users[username] = {"public_key": public_key}
 
-    return 'OK'
+    flash('succesfully registered as {}'.format(username), 'success')
+    return redirect(url_for('main'))
 
 
 @app.route('/login/submit', methods=['POST'])
 def login_submit():
-    user = users.get(request.form.get('username'))
+    username = request.form.get('username')
+    user = users.get(username)
 
     try:
         challenge = pop_challenge(request.form.get('challenge_id'))
     except KeyError:
-        return 'tried to use challenge for the second time'
+        flash('tried to use inexistent challenge nonce/the same nonce for the second time', 'error')
+        return redirect(url_for('main'))
 
     if not user:
-        return 'no such user'
+        flash('no such user {}'.format(username), 'error')
+        return redirect(url_for('main'))
 
     try:
         verify_signature(user["public_key"], challenge, request.form.get('signature'))
     except InvalidSignature:
-        return 'you are not him'
+        flash('you are not {}'.format(username), 'error')
+        return redirect(url_for('main'))
 
-    return 'hello user ' + request.form.get('username')
+    flash('hello user {}'.format(username), 'success')
+    return redirect(url_for('main'))
 
 
 @app.route('/login')

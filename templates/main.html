@@ -1,3 +1,29 @@
 <h1>Signature Login PoC</h1>
+<style>
+    .system {
+        border: 1px solid black;
+        padding: 15px 15px;
+    }
+
+    .flash-success {
+        color: green;
+    }
+
+    .flash-error {
+        color: red;
+    }
+</style>
+
+{% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    <div class="system">
+        <h2>System messages</h2>
+        {% for category, message in messages %}
+            <div class="flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <a href="{{ url_for('login') }}">login</a><br>
 <a href="{{ url_for('register') }}">register</a>
