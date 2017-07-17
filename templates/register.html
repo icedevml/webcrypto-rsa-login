@@ -15,7 +15,7 @@
         </div>
 
         <div class="form-group">
-            <label>Signature of the challenge</label>
+            <label>Signature of the public key and challenge</label>
             <textarea name="signature" id="signature" rows="5" class="form-control" readonly></textarea>
         </div>
 
@@ -33,9 +33,17 @@
         makeKeys().then(function (keys) {
             exportKey('spki', keys.publicKey).then(function (exportedKey) {
                 document.getElementById('public_key').value = spkiToPEM(exportedKey);
-                return signData(base64ToBinary(document.getElementById('challenge').value), keys.privateKey);
+
+                // prepare PKAC (Public Key and Challenge)
+                var challenge = base64ToBinary(document.getElementById('challenge').value);
+                var pkac = new Uint8Array(exportedKey.byteLength + challenge.byteLength);
+                pkac.set(new Uint8Array(exportedKey), 0);
+                pkac.set(new Uint8Array(challenge), exportedKey.byteLength);
+
+                // sign data (so we have Signed Public Key and Challenge)
+                return signData(pkac, keys.privateKey);
             }).then(function (signed) {
-                document.getElementById('signature').value = arrayToHex(new Uint8Array(signed));
+                document.getElementById('signature').value = arrayToHex(signed);
 
                 callDB(function (store) {
                     store.put({id: 1, publicKey: keys.publicKey, privateKey: keys.privateKey});

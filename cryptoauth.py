@@ -1,70 +1,22 @@
-import base64
-import os
-
-from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
-from flask import Flask
-from flask import flash
-from flask import redirect
-from flask import render_template
-from flask import request
-
-from flask import session
-from flask import url_for
+from cryptography.exceptions import InvalidSignature
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from redis import Redis
 
 from redis_session import RedisSessionInterface
-
-redis = Redis()
+from util import load_public_key, MalformedPublicKey, random_base64, verify_spkac, verify_challenge
 
 app = Flask(__name__)
+app.config.from_pyfile('config.py')
+redis = Redis(**app.config['REDIS_CONFIG'])
 app.session_interface = RedisSessionInterface(redis)
 app.debug = True
 
 users = {}
 
 
-class MalformedPublicKey(RuntimeError):
-    pass
-
-
-def generate_challenge():
-    return base64.b64encode(os.urandom(128)).decode('ascii')
-
-
-def load_pem_public_key(public_key_pem):
-    from cryptography.hazmat.primitives.serialization import load_pem_public_key
-    from cryptography.hazmat.backends import default_backend
-
-    try:
-        public_key = load_pem_public_key(public_key_pem, backend=default_backend())
-    except (ValueError, UnsupportedAlgorithm) as e:
-        raise MalformedPublicKey('Failed to load PEM public key') from e
-
-    if not isinstance(public_key, RSAPublicKey):
-        raise MalformedPublicKey('Expected RSA public key')
-
-    if public_key.key_size != 2048:
-        raise MalformedPublicKey('Expected 2048 bit modulus RSA public key')
-
-    app.logger.info('Loaded key: {}'.format(public_key.public_numbers()))
-
-    return public_key
-
-
-def verify_signature(public_key, challenge_str, signature_str):
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.asymmetric import padding
-
-    message = base64.b64decode(challenge_str)
-    signature = bytes(bytearray.fromhex(signature_str))
-
-    public_key.verify(signature, message, padding.PKCS1v15(), hashes.SHA256())
-
-
 @app.route('/register')
 def register():
-    challenge = generate_challenge()
+    challenge = random_base64(app.config['CHALLENGE_BYTES'])
     session['challenge_register'] = challenge
 
     return render_template('register.html', challenge=challenge)
@@ -75,7 +27,7 @@ def register_submit():
     public_key_pem = request.form.get('public_key')
 
     try:
-        public_key = load_pem_public_key(public_key_pem.encode('ascii'))
+        public_key = load_public_key(public_key_pem.encode('ascii'))
     except MalformedPublicKey as e:
         flash('malformed public key: {}'.format(e), 'danger')
         return redirect(url_for('main'))
@@ -87,7 +39,7 @@ def register_submit():
         return redirect(url_for('main'))
 
     try:
-        verify_signature(public_key, challenge, request.form.get('signature'))
+        verify_spkac(public_key, challenge, request.form.get('signature'))
     except InvalidSignature as e:
         flash('signature verification failed', 'danger')
         return redirect(url_for('main'))
@@ -123,10 +75,10 @@ def login_submit():
         flash('no such user {}'.format(username), 'danger')
         return redirect(url_for('main'))
 
-    user_public_key = load_pem_public_key(user_public_key_pem)
+    user_public_key = load_public_key(user_public_key_pem)
 
     try:
-        verify_signature(user_public_key, challenge, request.form.get('signature'))
+        verify_challenge(user_public_key, challenge, request.form.get('signature'))
     except InvalidSignature:
         flash('you are not {}'.format(username), 'danger')
         return redirect(url_for('main'))
@@ -137,7 +89,7 @@ def login_submit():
 
 @app.route('/login')
 def login():
-    challenge = generate_challenge()
+    challenge = random_base64(app.config['CHALLENGE_BYTES'])
     session['challenge_login'] = challenge
 
     return render_template('login.html', challenge=challenge)

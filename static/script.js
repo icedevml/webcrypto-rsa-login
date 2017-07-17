@@ -27,7 +27,7 @@ function callDB(op_callback, after_callback) {
 }
 
 function arrayToHex(arr) {
-    return arr.reduce(function (memo, i) {
+    return new Uint8Array(arr).reduce(function (memo, i) {
         return memo + ('0' + i.toString(16)).slice(-2); //padd with leading 0 if <16
     }, '');
 }
@@ -40,6 +40,7 @@ function base64ToBinary(base64) {
     for (i = 0; i < rawLength; i++) {
         array[i] = raw.charCodeAt(i);
     }
+
     return array;
 }
 

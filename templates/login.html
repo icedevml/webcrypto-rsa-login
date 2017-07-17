@@ -46,7 +46,7 @@
                     document.getElementById('public_key').value = spkiToPEM(exportedKey);
                     return signData(challenge, privateKey);
                 }).then(function (signed) {
-                    document.getElementById('signature').value = arrayToHex(new Uint8Array(signed));
+                    document.getElementById('signature').value = arrayToHex(signed);
                 });
             };
         }, function () {

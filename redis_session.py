@@ -1,19 +1,21 @@
 import pickle
 from datetime import timedelta
-from uuid import uuid4
 from redis import Redis
 from werkzeug.datastructures import CallbackDict
 from flask.sessions import SessionInterface, SessionMixin
 
+from util import random_base64
+
 """
 From http://flask.pocoo.org/snippets/75/
+modified session ID generation to ensure better randomness
 """
 
 
 class RedisSession(CallbackDict, SessionMixin):
     def __init__(self, initial=None, sid=None, new=False):
-        def on_update(self):
-            self.modified = True
+        def on_update(self_):
+            self_.modified = True
         CallbackDict.__init__(self, initial, on_update)
         self.sid = sid
         self.new = new
@@ -30,10 +32,12 @@ class RedisSessionInterface(SessionInterface):
         self.redis = redis
         self.prefix = prefix
 
-    def generate_sid(self):
-        return str(uuid4())
+    @staticmethod
+    def generate_sid():
+        return random_base64(64)
 
-    def get_redis_expiration_time(self, app, session):
+    @staticmethod
+    def get_redis_expiration_time(app, session):
         if session.permanent:
             return app.permanent_session_lifetime
         return timedelta(days=1)
