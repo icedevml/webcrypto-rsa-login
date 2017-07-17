@@ -3,19 +3,19 @@ function callDB(op_callback, after_callback) {
     var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
 
     // Open (or create) the database
-    var open = indexedDB.open("MyDatabase", 1);
+    var open = indexedDB.open("SignatureLoginPoC", 1);
 
     // Create the schema
     open.onupgradeneeded = function () {
         var db = open.result;
-        var store = db.createObjectStore("MyObjectStore", {keyPath: "id"});
+        var store = db.createObjectStore("keystore", {keyPath: "id"});
     };
 
     open.onsuccess = function () {
         // Start a new transaction
         var db = open.result;
-        var tx = db.transaction("MyObjectStore", "readwrite");
-        var store = tx.objectStore("MyObjectStore");
+        var tx = db.transaction("keystore", "readwrite");
+        var store = tx.objectStore("keystore");
 
         op_callback(store);
 
@@ -123,6 +123,16 @@ function verifySignature(data, keys, signature) {
         return window.crypto.subtle.verify(options, keys.publicKey, signature, data);
     } else if (window.crypto && window.crypto.webkitSubtle) {
         return window.crypto.webkitSubtle.verify(options, keys.publicKey, signature, data);
+    } else {
+        throw new Error('No suitable "verify" implementation was found.');
+    }
+}
+
+function exportKey(format, publicKey) {
+    if (window.crypto && window.crypto.subtle) {
+        return window.crypto.subtle.exportKey(format, publicKey);
+    } else if (window.crypto && window.crypto.webkitSubtle) {
+        return window.crypto.webkitSubtle.exportKey(format, publicKey);
     } else {
         throw new Error('No suitable "verify" implementation was found.');
     }

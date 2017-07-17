@@ -10,6 +10,11 @@
         </div>
 
         <div class="form-group">
+            <label>Loaded public key</label>
+            <textarea class="form-control" id="public_key" rows="5" readonly></textarea>
+        </div>
+
+        <div class="form-group">
             <label>Signature of the challenge</label>
             <textarea name="signature" id="signature" class="form-control" rows="5" readonly></textarea>
         </div>
@@ -37,7 +42,10 @@
                 var privateKey = getData.result.privateKey;
                 var challenge = base64ToBinary(document.getElementById('challenge').value);
 
-                signData(challenge, privateKey).then(function (signed) {
+                exportKey('spki', publicKey).then(function (exportedKey) {
+                    document.getElementById('public_key').value = spkiToPEM(exportedKey);
+                    return signData(challenge, privateKey);
+                }).then(function (signed) {
                     document.getElementById('signature').value = arrayToHex(new Uint8Array(signed));
                 });
             };
