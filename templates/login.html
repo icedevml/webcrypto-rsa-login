@@ -3,9 +3,6 @@
     Challenge nonce (not sent to the server):<br>
     <textarea id="challenge" rows="5" readonly>{{ challenge }}</textarea><br>
 
-    Challenge ID:<br>
-    <input type="text" name="challenge_id" value="{{ challenge_id }}" readonly><br>
-
     Signature of the challenge:<br>
     <textarea name="signature" id="signature" rows="5" readonly></textarea><br>
 
@@ -19,6 +16,11 @@
     callDB(function (store) {
         var getData = store.get(1);
         getData.onsuccess = function () {
+            if (!getData.result) {
+                document.getElementById('form').innerHTML = 'You don\'t have any key generated yet.';
+                return;
+            }
+
             var publicKey = getData.result.publicKey;
             var privateKey = getData.result.privateKey;
             var challenge = base64ToBinary(document.getElementById('challenge').value);

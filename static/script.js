@@ -79,27 +79,51 @@ function makeData() {
 }
 
 function makeKeys() {
-    return window.crypto.subtle.generateKey({
-            name: "RSA-PSS",
-            modulusLength: 2048,
-            publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-            hash: {name: "SHA-256"}
-        }, false, // exportable
-        ["sign", "verify"]);
+    var options = {
+        name: "RSASSA-PKCS1-v1_5",
+        modulusLength: 2048, //can be 1024, 2048, or 4096
+        publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+        hash: {name: "SHA-256"} //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
+    };
+
+    var usages = ["sign", "verify"];
+
+    // this is insane and the standard trick with window.crypto || window.msCrypto won't work in this case
+    if (window.crypto && window.crypto.subtle) {
+        return window.crypto.subtle.generateKey(options, false, usages);
+    } else if (window.crypto && window.crypto.webkitSubtle) {
+        return window.crypto.webkitSubtle.generateKey(options, false, usages);
+    } else {
+        throw new Error('No suitable "generateKey" implementation was found.');
+    }
 }
 
 function signData(data, privateKey) {
-    return window.crypto.subtle.sign({
-        name: "RSA-PSS",
-        saltLength: 222, // max salt length
+    var options = {
+        name: "RSASSA-PKCS1-v1_5",
         hash: {name: "SHA-256"}
-    }, privateKey, data);
+    };
+
+    if (window.crypto && window.crypto.subtle) {
+        return window.crypto.subtle.sign(options, privateKey, data);
+    } else if (window.crypto && window.crypto.webkitSubtle) {
+        return window.crypto.webkitSubtle.sign(options, privateKey, data);
+    } else {
+        throw new Error('No suitable "sign" implementation was found.');
+    }
 }
 
 function verifySignature(data, keys, signature) {
-    return window.crypto.subtle.verify({
-        name: "RSA-PSS",
-        saltLength: 222, // max salt length
+    var options = {
+        name: "RSASSA-PKCS1-v1_5",
         hash: {name: "SHA-256"}
-    }, keys.publicKey, signature, data);
+    };
+
+    if (window.crypto && window.crypto.subtle) {
+        return window.crypto.subtle.verify(options, keys.publicKey, signature, data);
+    } else if (window.crypto && window.crypto.webkitSubtle) {
+        return window.crypto.webkitSubtle.verify(options, keys.publicKey, signature, data);
+    } else {
+        throw new Error('No suitable "verify" implementation was found.');
+    }
 }

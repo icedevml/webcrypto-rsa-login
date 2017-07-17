@@ -2,13 +2,14 @@ import base64
 import os
 
 from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from flask import Flask
 from flask import flash
 from flask import redirect
 from flask import render_template
 from flask import request
-from uuid import uuid4
 
+from flask import session
 from flask import url_for
 
 app = Flask(__name__)
@@ -16,26 +17,31 @@ app.debug = True
 app.secret_key = 'foobar123'
 
 users = {}
-challenges = {}
+
+
+class MalformedPublicKey(RuntimeError):
+    pass
 
 
 def generate_challenge():
-    challenge_id = str(uuid4())
-    challenge = base64.b64encode(os.urandom(128)).decode('ascii')
-
-    challenges[challenge_id] = challenge
-    return challenge_id, challenge
-
-
-def pop_challenge(challenge_id):
-    return challenges.pop(challenge_id)
+    return base64.b64encode(os.urandom(128)).decode('ascii')
 
 
 def load_pem_public_key(public_key_pem):
     from cryptography.hazmat.primitives.serialization import load_pem_public_key
     from cryptography.hazmat.backends import default_backend
 
-    return load_pem_public_key(request.form.get('public_key').encode('ascii'), backend=default_backend())
+    public_key = load_pem_public_key(request.form.get('public_key').encode('ascii'), backend=default_backend())
+
+    if not isinstance(public_key, RSAPublicKey):
+        raise MalformedPublicKey('Expected RSA public key')
+
+    if public_key.key_size != 2048:
+        raise MalformedPublicKey('Expected 2048 bit modulus RSA public key')
+
+    app.logger.info('Loaded key: {}'.format(public_key.public_numbers()))
+
+    return public_key
 
 
 def verify_signature(public_key, challenge_str, signature_str):
@@ -45,24 +51,15 @@ def verify_signature(public_key, challenge_str, signature_str):
     message = base64.b64decode(challenge_str)
     signature = bytes(bytearray.fromhex(signature_str))
 
-    # print(padding.calculate_max_pss_salt_length(public_key, hashes.SHA256()))
-
-    public_key.verify(
-        signature,
-        message,
-        padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH
-        ),
-        hashes.SHA256()
-    )
+    public_key.verify(signature, message, padding.PKCS1v15(), hashes.SHA256())
 
 
 @app.route('/register')
 def register():
-    challenge_id, challenge = generate_challenge()
+    challenge = generate_challenge()
+    session['challenge'] = challenge
 
-    return render_template('register.html', challenge_id=challenge_id, challenge=challenge)
+    return render_template('register.html', challenge=challenge)
 
 
 @app.route('/register/submit', methods=['POST'])
@@ -70,14 +67,14 @@ def register_submit():
     public_key = load_pem_public_key(request.form.get('public_key'))
 
     try:
-        challenge = pop_challenge(request.form.get('challenge_id'))
+        challenge = session['challenge']
     except KeyError:
-        flash('tried to use inexistent challenge nonce/the same nonce for the second time', 'error')
+        flash('no challenge was stored in session', 'error')
         return redirect(url_for('main'))
 
     try:
         verify_signature(public_key, challenge, request.form.get('signature'))
-    except InvalidSignature:
+    except InvalidSignature as e:
         flash('signature verification failed', 'error')
         return redirect(url_for('main'))
 
@@ -99,9 +96,9 @@ def login_submit():
     user = users.get(username)
 
     try:
-        challenge = pop_challenge(request.form.get('challenge_id'))
+        challenge = session['challenge']
     except KeyError:
-        flash('tried to use inexistent challenge nonce/the same nonce for the second time', 'error')
+        flash('no challenge was stored in session', 'error')
         return redirect(url_for('main'))
 
     if not user:
@@ -120,9 +117,10 @@ def login_submit():
 
 @app.route('/login')
 def login():
-    challenge_id, challenge = generate_challenge()
+    challenge = generate_challenge()
+    session['challenge'] = challenge
 
-    return render_template('login.html', challenge_id=challenge_id, challenge=challenge)
+    return render_template('login.html', challenge=challenge)
 
 
 @app.route('/')
