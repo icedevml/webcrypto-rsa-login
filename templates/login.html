@@ -1,33 +1,47 @@
-<script src="/static/script.js"></script>
-<form action="{{ url_for('login_submit') }}" method="POST" id="form">
-    Challenge nonce (not sent to the server):<br>
-    <textarea id="challenge" rows="5" readonly>{{ challenge }}</textarea><br>
+{% extends "_layout.html" %}
 
-    Signature of the challenge:<br>
-    <textarea name="signature" id="signature" rows="5" readonly></textarea><br>
+{% block content %}
+    <h2>Login</h2>
 
-    User name:<br>
-    <input type="text" name="username" value=""><br>
+    <form action="{{ url_for('login_submit') }}" method="POST" id="form">
+        <div class="form-group">
+            <label>Challenge nonce (stored in session)</label>
+            <textarea id="challenge" class="form-control" rows="5" readonly>{{ challenge }}</textarea>
+        </div>
 
-    <input type="submit">
-</form>
+        <div class="form-group">
+            <label>Signature of the challenge</label>
+            <textarea name="signature" id="signature" class="form-control" rows="5" readonly></textarea>
+        </div>
 
-<script>
-    callDB(function (store) {
-        var getData = store.get(1);
-        getData.onsuccess = function () {
-            if (!getData.result) {
-                document.getElementById('form').innerHTML = 'You don\'t have any key generated yet.';
-                return;
-            }
+        <div class="form-group">
+            <label>User name</label>
+            <input type="text" name="username" value="" class="form-control">
+        </div>
 
-            var publicKey = getData.result.publicKey;
-            var privateKey = getData.result.privateKey;
-            var challenge = base64ToBinary(document.getElementById('challenge').value);
+        <button type="submit" class="btn btn-primary">Log in</button>
+    </form>
+{% endblock %}
 
-            signData(challenge, privateKey).then(function (signed) {
-                document.getElementById('signature').value = arrayToHex(new Uint8Array(signed));
-            });
-        };
-    }, function () {});
-</script>
+{% block scripts %}
+    <script>
+        callDB(function (store) {
+            var getData = store.get(1);
+            getData.onsuccess = function () {
+                if (!getData.result) {
+                    document.getElementById('form').innerHTML = 'You don\'t have any key generated yet.';
+                    return;
+                }
+
+                var publicKey = getData.result.publicKey;
+                var privateKey = getData.result.privateKey;
+                var challenge = base64ToBinary(document.getElementById('challenge').value);
+
+                signData(challenge, privateKey).then(function (signed) {
+                    document.getElementById('signature').value = arrayToHex(new Uint8Array(signed));
+                });
+            };
+        }, function () {
+        });
+    </script>
+{% endblock %}

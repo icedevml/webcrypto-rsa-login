@@ -1,31 +1,47 @@
-<script src="/static/script.js"></script>
-<form action="{{ url_for('register_submit') }}" method="POST" id="form">
-    Challenge nonce (not sent to the server):<br>
-    <textarea id="challenge" rows="5" readonly>{{ challenge }}</textarea><br>
+{% extends "_layout.html" %}
 
-    Public key:<br>
-    <textarea name="public_key" id="public_key" rows="5" readonly></textarea><br>
+{% block content %}
+    <h2>Register</h2>
 
-    Signature of the challenge:<br>
-    <textarea name="signature" id="signature" rows="5" readonly></textarea><br>
+    <form action="{{ url_for('register_submit') }}" method="POST" id="form">
+        <div class="form-group">
+            <label>Challenge nonce (stored in session)</label>
+            <textarea id="challenge" rows="5" class="form-control" readonly>{{ challenge }}</textarea>
+        </div>
 
-    User name:<br>
-    <input type="text" name="username" value=""><br>
+        <div class="form-group">
+            <label>Public key</label>
+            <textarea name="public_key" id="public_key" rows="5" class="form-control" readonly></textarea>
+        </div>
 
-    <input type="submit">
-</form>
+        <div class="form-group">
+            <label>Signature of the challenge</label>
+            <textarea name="signature" id="signature" rows="5" class="form-control" readonly></textarea>
+        </div>
 
-<script>
-    makeKeys().then(function (keys) {
-        window.crypto.subtle.exportKey('spki', keys.publicKey).then(function (exportedKey) {
-            document.getElementById('public_key').value = spkiToPEM(exportedKey);
-            return signData(base64ToBinary(document.getElementById('challenge').value), keys.privateKey);
-        }).then(function (signed) {
-            document.getElementById('signature').value = arrayToHex(new Uint8Array(signed));
+        <div class="form-group">
+            <label>User name</label>
+            <input type="text" name="username" value="" class="form-control">
+        </div>
 
-            callDB(function (store) {
-                store.put({ id: 1, publicKey: keys.publicKey, privateKey: keys.privateKey });
-            }, function () {});
+        <button type="submit" class="btn btn-primary">Register</button>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        makeKeys().then(function (keys) {
+            window.crypto.subtle.exportKey('spki', keys.publicKey).then(function (exportedKey) {
+                document.getElementById('public_key').value = spkiToPEM(exportedKey);
+                return signData(base64ToBinary(document.getElementById('challenge').value), keys.privateKey);
+            }).then(function (signed) {
+                document.getElementById('signature').value = arrayToHex(new Uint8Array(signed));
+
+                callDB(function (store) {
+                    store.put({id: 1, publicKey: keys.publicKey, privateKey: keys.privateKey});
+                }, function () {
+                });
+            });
         });
-    });
-</script>
+    </script>
+{% endblock %}

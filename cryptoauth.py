@@ -69,19 +69,19 @@ def register_submit():
     try:
         challenge = session['challenge']
     except KeyError:
-        flash('no challenge was stored in session', 'error')
+        flash('no challenge was stored in session', 'danger')
         return redirect(url_for('main'))
 
     try:
         verify_signature(public_key, challenge, request.form.get('signature'))
     except InvalidSignature as e:
-        flash('signature verification failed', 'error')
+        flash('signature verification failed', 'danger')
         return redirect(url_for('main'))
 
     username = request.form.get('username')
 
     if username in users:
-        flash('such user already exists', 'error')
+        flash('such user already exists', 'danger')
         return redirect(url_for('main'))
 
     users[username] = {"public_key": public_key}
@@ -98,17 +98,17 @@ def login_submit():
     try:
         challenge = session['challenge']
     except KeyError:
-        flash('no challenge was stored in session', 'error')
+        flash('no challenge was stored in session', 'danger')
         return redirect(url_for('main'))
 
     if not user:
-        flash('no such user {}'.format(username), 'error')
+        flash('no such user {}'.format(username), 'danger')
         return redirect(url_for('main'))
 
     try:
         verify_signature(user["public_key"], challenge, request.form.get('signature'))
     except InvalidSignature:
-        flash('you are not {}'.format(username), 'error')
+        flash('you are not {}'.format(username), 'danger')
         return redirect(url_for('main'))
 
     flash('hello user {}'.format(username), 'success')
