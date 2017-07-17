@@ -94,6 +94,10 @@ def register_submit():
 
     username = request.form.get('username')
 
+    if len(username) == 0:
+        flash('empty username not allowed', 'danger')
+        return redirect(url_for('main'))
+
     if redis.get('user:{}:public_key'.format(username)):
         flash('such user already exists', 'danger')
         return redirect(url_for('main'))
