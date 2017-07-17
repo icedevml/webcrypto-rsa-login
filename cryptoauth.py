@@ -1,7 +1,7 @@
 import base64
 import os
 
-from cryptography.exceptions import InvalidSignature
+from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from flask import Flask
 from flask import flash
@@ -36,7 +36,10 @@ def load_pem_public_key(public_key_pem):
     from cryptography.hazmat.primitives.serialization import load_pem_public_key
     from cryptography.hazmat.backends import default_backend
 
-    public_key = load_pem_public_key(public_key_pem, backend=default_backend())
+    try:
+        public_key = load_pem_public_key(public_key_pem, backend=default_backend())
+    except (ValueError, UnsupportedAlgorithm) as e:
+        raise MalformedPublicKey('Failed to load PEM public key') from e
 
     if not isinstance(public_key, RSAPublicKey):
         raise MalformedPublicKey('Expected RSA public key')
@@ -70,7 +73,12 @@ def register():
 @app.route('/register/submit', methods=['POST'])
 def register_submit():
     public_key_pem = request.form.get('public_key')
-    public_key = load_pem_public_key(public_key_pem.encode('ascii'))
+
+    try:
+        public_key = load_pem_public_key(public_key_pem.encode('ascii'))
+    except MalformedPublicKey as e:
+        flash('malformed public key: {}'.format(e), 'danger')
+        return redirect(url_for('main'))
 
     try:
         challenge = session.pop('challenge_register')
