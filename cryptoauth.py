@@ -31,7 +31,7 @@ def load_pem_public_key(public_key_pem):
     from cryptography.hazmat.primitives.serialization import load_pem_public_key
     from cryptography.hazmat.backends import default_backend
 
-    public_key = load_pem_public_key(request.form.get('public_key').encode('ascii'), backend=default_backend())
+    public_key = load_pem_public_key(public_key_pem.encode('ascii'), backend=default_backend())
 
     if not isinstance(public_key, RSAPublicKey):
         raise MalformedPublicKey('Expected RSA public key')
