@@ -3,7 +3,7 @@
 {% block content %}
     <h2>Login</h2>
 
-    <form action="{{ url_for('login_submit') }}" method="POST" id="form">
+    <form action="{{ url_for('login_submit') }}" method="POST" id="login_form">
         <div class="form-group">
             <label>Challenge nonce (stored in session)</label>
             <textarea id="challenge" class="form-control" rows="5" readonly>{{ challenge }}</textarea>
