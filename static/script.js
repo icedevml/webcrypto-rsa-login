@@ -89,14 +89,7 @@ function makeKeys() {
 
     var usages = ["sign", "verify"];
 
-    // this is insane and the standard trick with window.crypto || window.msCrypto won't work in this case
-    if (window.crypto && window.crypto.subtle) {
-        return window.crypto.subtle.generateKey(options, false, usages);
-    } else if (window.crypto && window.crypto.webkitSubtle) {
-        return window.crypto.webkitSubtle.generateKey(options, false, usages);
-    } else {
-        throw new Error('No suitable "generateKey" implementation was found.');
-    }
+    return window.crypto.subtle.generateKey(options, false, usages);
 }
 
 function signData(data, privateKey) {
@@ -105,13 +98,7 @@ function signData(data, privateKey) {
         hash: {name: "SHA-256"}
     };
 
-    if (window.crypto && window.crypto.subtle) {
-        return window.crypto.subtle.sign(options, privateKey, data);
-    } else if (window.crypto && window.crypto.webkitSubtle) {
-        return window.crypto.webkitSubtle.sign(options, privateKey, data);
-    } else {
-        throw new Error('No suitable "sign" implementation was found.');
-    }
+    return window.crypto.subtle.sign(options, privateKey, data);
 }
 
 function verifySignature(data, keys, signature) {
@@ -120,21 +107,9 @@ function verifySignature(data, keys, signature) {
         hash: {name: "SHA-256"}
     };
 
-    if (window.crypto && window.crypto.subtle) {
-        return window.crypto.subtle.verify(options, keys.publicKey, signature, data);
-    } else if (window.crypto && window.crypto.webkitSubtle) {
-        return window.crypto.webkitSubtle.verify(options, keys.publicKey, signature, data);
-    } else {
-        throw new Error('No suitable "verify" implementation was found.');
-    }
+    return window.crypto.subtle.verify(options, keys.publicKey, signature, data);
 }
 
 function exportKey(format, publicKey) {
-    if (window.crypto && window.crypto.subtle) {
-        return window.crypto.subtle.exportKey(format, publicKey);
-    } else if (window.crypto && window.crypto.webkitSubtle) {
-        return window.crypto.webkitSubtle.exportKey(format, publicKey);
-    } else {
-        throw new Error('No suitable "verify" implementation was found.');
-    }
+    return window.crypto.subtle.exportKey(format, publicKey);
 }
