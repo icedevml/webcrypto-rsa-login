@@ -11,7 +11,11 @@ redis = Redis(**app.config['REDIS_CONFIG'])
 app.session_interface = RedisSessionInterface(redis)
 app.debug = True
 
-users = {}
+
+@app.after_request
+def add_csp(response):
+    response.headers["Content-Security-Policy"] = app.config['CSP_HEADER']
+    return response
 
 
 @app.route('/register')
