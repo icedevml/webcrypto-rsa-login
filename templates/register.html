@@ -34,20 +34,19 @@
             exportKey('spki', keys.publicKey).then(function (exportedKey) {
                 document.getElementById('public_key').value = spkiToPEM(exportedKey);
 
-                // prepare PKAC (Public Key and Challenge)
+                // prepare a structure similiar to PKAC (Public Key and Challenge)
                 var challenge = base64ToBinary(document.getElementById('challenge').value);
                 var pkac = new Uint8Array(exportedKey.byteLength + challenge.byteLength);
                 pkac.set(new Uint8Array(exportedKey), 0);
                 pkac.set(new Uint8Array(challenge), exportedKey.byteLength);
 
-                // sign data (so we have Signed Public Key and Challenge)
+                // sign data (so we have a signed "PKAC")
                 return signData(pkac, keys.privateKey);
             }).then(function (signed) {
                 document.getElementById('signature').value = arrayToHex(signed);
 
-                callDB(function (store) {
+                callIndexedDB(function (store) {
                     store.put({id: 1, publicKey: keys.publicKey, privateKey: keys.privateKey});
-                }, function () {
                 });
             });
         });
