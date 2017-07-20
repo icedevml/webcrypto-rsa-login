@@ -2,27 +2,30 @@ function callIndexedDB(op_callback) {
     // original function brought from:
     // https://gist.github.com/BigstickCarpet/a0d6389a5d0e3a24814b
 
-    var indexedDB = window.indexedDB || window.mozIndexedDB
-        || window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
+    return new Promise(function (resolve, reject) {
+        var indexedDB = window.indexedDB || window.mozIndexedDB
+            || window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
 
-    var open = indexedDB.open("SignatureLoginPoC", 1);
+        var open = indexedDB.open("SignatureLoginPoC", 1);
 
-    open.onupgradeneeded = function () {
-        var db = open.result;
-        var store = db.createObjectStore("keystore", {keyPath: "id"});
-    };
-
-    open.onsuccess = function () {
-        var db = open.result;
-        var tx = db.transaction("keystore", "readwrite");
-        var store = tx.objectStore("keystore");
-
-        op_callback(store);
-
-        tx.oncomplete = function () {
-            db.close();
+        open.onupgradeneeded = function () {
+            var db = open.result;
+            var store = db.createObjectStore("keystore", {keyPath: "id"});
         };
-    };
+
+        open.onsuccess = function () {
+            var db = open.result;
+            var tx = db.transaction("keystore", "readwrite");
+            var store = tx.objectStore("keystore");
+
+            op_callback(store).then(function (data) {
+                db.close();
+                resolve(data);
+            }, function (err) {
+                reject(err);
+            })
+        };
+    });
 }
 
 function base64ToBinary(base64) {
