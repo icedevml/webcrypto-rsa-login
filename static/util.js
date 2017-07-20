@@ -43,6 +43,13 @@ function base64ToBinary(base64) {
     return array;
 }
 
+function binaryToBase64(arrayBuffer) {
+    // original function brought from:
+    // https://stackoverflow.com/a/11562550
+
+    return btoa([].reduce.call(new Uint8Array(arrayBuffer), function(p, c) {return p+String.fromCharCode(c)}, ''));
+}
+
 function arrayToString(buffer) {
     // original function brought from:
     // https://stackoverflow.com/a/40327542
@@ -55,16 +62,6 @@ function arrayToString(buffer) {
     }
     return binary;
 }
-
-function arrayToHex(arr) {
-    // original function brought from:
-    // https://stackoverflow.com/a/39225475
-
-    return new Uint8Array(arr).reduce(function (memo, i) {
-        return memo + ('0' + i.toString(16)).slice(-2); //padd with leading 0 if <16
-    }, '');
-}
-
 
 function formatAsPem(str) {
     // original function brought from:

@@ -6,17 +6,17 @@
     <form action="{{ url_for('.login_submit') }}" method="POST" id="login_form">
         <div class="form-group">
             <label>Challenge nonce (stored in session)</label>
-            <textarea id="challenge" class="form-control" rows="5" readonly>{{ challenge }}</textarea>
+            <textarea id="challenge" class="form-control monospace-font" rows="5" readonly>{{ challenge }}</textarea>
         </div>
 
         <div class="form-group">
             <label>Loaded public key</label>
-            <textarea class="form-control" id="public_key" rows="5" readonly></textarea>
+            <textarea id="public_key" class="form-control monospace-font" rows="5" readonly></textarea>
         </div>
 
         <div class="form-group">
             <label>Signature of the challenge</label>
-            <textarea name="signature" id="signature" class="form-control" rows="5" readonly></textarea>
+            <textarea id="signature" name="signature" class="form-control monospace-font" rows="5" readonly></textarea>
         </div>
 
         <div class="form-group">

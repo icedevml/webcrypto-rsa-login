@@ -3,7 +3,7 @@ var login_form = document.getElementById('login_form');
 if (login_form) {
     var challenge = document.getElementById('challenge').value;
 
-    performLogin(challenge).then(function (res) {
+    performLogin('poc_login', challenge).then(function (res) {
         document.getElementById('public_key').value = res.publicKey;
         document.getElementById('signature').value = res.signature;
     }, function (err) {

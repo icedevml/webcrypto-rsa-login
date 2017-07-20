@@ -35,7 +35,7 @@ def load_public_key(public_key_pem):
 
 def verify_challenge(public_key, challenge_str, signature_str):
     message = base64.b64decode(challenge_str)
-    signature = bytes(bytearray.fromhex(signature_str))
+    signature = base64.b64decode(signature_str)
 
     public_key.verify(signature, message, padding.PKCS1v15(), hashes.SHA256())
 
@@ -45,7 +45,7 @@ def verify_spkac(public_key, challenge_str, signature_str):
         encoding=serialization.Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo)
 
     message = base64.b64decode(challenge_str)
-    signature = bytes(bytearray.fromhex(signature_str))
+    signature = base64.b64decode(signature_str)
     spkac = public_key_der + message
 
     public_key.verify(signature, spkac, padding.PKCS1v15(), hashes.SHA256())

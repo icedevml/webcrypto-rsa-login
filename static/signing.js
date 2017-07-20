@@ -1,24 +1,29 @@
-function performLogin(challenge) {
-    if (typeof challenge === "string") {
-        challenge = base64ToBinary(challenge);
-    }
-
+function fetchKeyPair(key_label) {
     return callIndexedDB(function (store) {
         return new Promise(function (resolve, reject) {
-            var getData = store.get("key_pair");
+            var getData = store.get(key_label);
             getData.onsuccess = function () {
                 // we've fetched our key pair (which was generated during registration) from IndexedDB
+                if (!getData.result) {
+                    // TODO custom exception
+                    reject('no_key_stored');
+                }
+
                 resolve(getData.result);
             };
             getData.onerror = function (err) {
                 reject(err);
             };
         });
-    }).then(function (dbResult) {
-        if (!dbResult) {
-            return Promise.reject('no_key_stored');
-        }
+    });
+}
 
+function performLogin(key_label, challenge) {
+    if (typeof challenge === "string") {
+        challenge = base64ToBinary(challenge);
+    }
+
+    return fetchKeyPair(key_label).then(function (dbResult) {
         var exportKeyPromise = exportKey('spki', dbResult.publicKey);
         var signDataPromise = signData(challenge, dbResult.privateKey);
 
@@ -33,13 +38,13 @@ function performLogin(challenge) {
 
         // fill the "signature" form field with the signature of the challenge
         // it will be sent over to the server for verification
-        var signature = arrayToHex(rawSignature);
+        var signature = binaryToBase64(rawSignature);
 
         return {"publicKey": publicKey, "signature": signature};
     });
 }
 
-function performRegister(challenge) {
+function performRegister(key_label, challenge) {
     if (typeof challenge === "string") {
         challenge = base64ToBinary(challenge);
     }
@@ -72,7 +77,7 @@ function performRegister(challenge) {
         // securely store the new key pair in the IndexedDB
         var dbPromise = callIndexedDB(function (store) {
             return new Promise(function (resolve, reject) {
-                store.put({id: "key_pair", publicKey: keys.publicKey, privateKey: keys.privateKey});
+                store.put({id: key_label, publicKey: keys.publicKey, privateKey: keys.privateKey});
                 resolve();
             });
         });
@@ -82,7 +87,7 @@ function performRegister(challenge) {
     }).then(function (vals) {
         var keys = vals[0];
         var publicKeyPEM = vals[1];
-        var signature = arrayToHex(vals[2]);
+        var signature = binaryToBase64(vals[2]);
 
         return {"publicKey": publicKeyPEM, "signature": signature};
     });

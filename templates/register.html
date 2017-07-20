@@ -6,22 +6,22 @@
     <form action="{{ url_for('.register_submit') }}" method="POST" id="register_form">
         <div class="form-group">
             <label>Challenge nonce (stored in session)</label>
-            <textarea id="challenge" rows="5" class="form-control" readonly>{{ challenge }}</textarea>
+            <textarea id="challenge" class="form-control monospace-font" rows="5" readonly>{{ challenge }}</textarea>
         </div>
 
         <div class="form-group">
             <label>Generated public key</label>
-            <textarea name="public_key" id="public_key" rows="5" class="form-control" readonly></textarea>
+            <textarea id="public_key" name="public_key" class="form-control monospace-font" rows="5" readonly></textarea>
         </div>
 
         <div class="form-group">
             <label>Signature of the public key and challenge</label>
-            <textarea name="signature" id="signature" rows="5" class="form-control" readonly></textarea>
+            <textarea id="signature" name="signature" class="form-control monospace-font" rows="5" readonly></textarea>
         </div>
 
         <div class="form-group">
             <label>User name</label>
-            <input type="text" name="username" value="" class="form-control">
+            <input type="text" name="username" class="form-control" value="">
         </div>
 
         <button type="submit" class="btn btn-primary">Register</button>
