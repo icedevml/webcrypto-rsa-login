@@ -1,3 +1,21 @@
+function getAllKeyPairLabels() {
+    return callIndexedDB(function (store) {
+        return new Promise(function (resolve, reject) {
+            var getData = store.getAll();
+            getData.onsuccess = function () {
+                var ids = Object.keys(getData.result).map(function (k) {
+                    return getData.result[k].id;
+                });
+
+                resolve(ids);
+            };
+            getData.onerror = function (err) {
+                reject(err);
+            };
+        });
+    });
+}
+
 function performLogin(key_label, challenge) {
     if (typeof challenge === "string") {
         challenge = base64ToBinary(challenge);
