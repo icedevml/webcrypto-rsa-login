@@ -7,6 +7,6 @@ if (register_form) {
         document.getElementById('public_key').value = res.publicKey;
         document.getElementById('signature').value = res.signature;
     }, function (err) {
-        console.error(err);
+        console.error('Failed to perform register script.', err);
     });
 }

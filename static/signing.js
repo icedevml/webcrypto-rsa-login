@@ -1,12 +1,15 @@
-function fetchKeyPair(key_label) {
+function performLogin(key_label, challenge) {
+    if (typeof challenge === "string") {
+        challenge = base64ToBinary(challenge);
+    }
+
     return callIndexedDB(function (store) {
         return new Promise(function (resolve, reject) {
             var getData = store.get(key_label);
             getData.onsuccess = function () {
                 // we've fetched our key pair (which was generated during registration) from IndexedDB
                 if (!getData.result) {
-                    // TODO custom exception
-                    reject('no_key_stored');
+                    reject(new NoSuchKeyPair(key_label));
                 }
 
                 resolve(getData.result);
@@ -15,15 +18,7 @@ function fetchKeyPair(key_label) {
                 reject(err);
             };
         });
-    });
-}
-
-function performLogin(key_label, challenge) {
-    if (typeof challenge === "string") {
-        challenge = base64ToBinary(challenge);
-    }
-
-    return fetchKeyPair(key_label).then(function (dbResult) {
+    }).then(function (dbResult) {
         var exportKeyPromise = exportKey('spki', dbResult.publicKey);
         var signDataPromise = signData(challenge, dbResult.privateKey);
 

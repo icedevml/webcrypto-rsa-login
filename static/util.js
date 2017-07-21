@@ -1,3 +1,12 @@
+function NoSuchKeyPair(message) {
+  this.name = 'NoSuchKeyPair';
+  this.message = message;
+  this.stack = (new Error()).stack;
+}
+
+NoSuchKeyPair.prototype = Object.create(Error.prototype);
+NoSuchKeyPair.prototype.constructor = NoSuchKeyPair;
+
 function callIndexedDB(op_callback) {
     // original function brought from:
     // https://gist.github.com/BigstickCarpet/a0d6389a5d0e3a24814b

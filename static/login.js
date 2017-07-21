@@ -7,11 +7,10 @@ if (login_form) {
         document.getElementById('public_key').value = res.publicKey;
         document.getElementById('signature').value = res.signature;
     }, function (err) {
-        // TODO implement custom error
-        if (err == 'no_key_stored') {
+        if (err instanceof NoSuchKeyPair) {
             document.getElementById('login_form').innerHTML = 'You don\'t have any key generated yet.';
+        } else {
+            console.error('Failed to perform login script.', err);
         }
-
-        console.error(err);
     });
 }
